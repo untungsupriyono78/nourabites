@@ -7,7 +7,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Poppins', sans-serif; scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Poppins', sans-serif; }
+    section[id], header[id] { scroll-margin-top: 70px; }
   </style>
 </head>
 <body class="bg-amber-50 text-gray-800 antialiased">
@@ -84,26 +86,26 @@
 
       <form id="orderForm" class="space-y-4">
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Lengkap *</label>
-          <input type="text" id="nama" required placeholder="Contoh: Budi Santoso" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+          <label for="nama" class="block text-sm font-semibold text-gray-700 mb-1">Nama Lengkap *</label>
+          <input type="text" id="nama" required maxlength="100" placeholder="Contoh: Budi Santoso" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Nomor WhatsApp *</label>
-          <input type="tel" id="whatsapp" required placeholder="Contoh: 081234567890" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+          <label for="whatsapp" class="block text-sm font-semibold text-gray-700 mb-1">Nomor WhatsApp *</label>
+          <input type="tel" id="whatsapp" required inputmode="numeric" pattern="[0-9+\-\s]{9,20}" title="Isi nomor WhatsApp yang benar, contoh: 081234567890" placeholder="Contoh: 081234567890" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Alamat Pengiriman Lengkap *</label>
-          <textarea id="alamat" rows="3" required placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan, kota..." class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
+          <label for="alamat" class="block text-sm font-semibold text-gray-700 mb-1">Alamat Pengiriman Lengkap *</label>
+          <textarea id="alamat" rows="3" required maxlength="500" placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan, kota..." class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Catatan Tambahan (Opsional)</label>
-          <input type="text" id="catatan" placeholder="Contoh: Level pedas sedang / titip pos satpam" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+          <label for="catatan" class="block text-sm font-semibold text-gray-700 mb-1">Catatan Tambahan (Opsional)</label>
+          <input type="text" id="catatan" maxlength="300" placeholder="Contoh: Level pedas sedang / titip pos satpam" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
         </div>
 
-        <button type="submit" id="btnSubmit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3.5 rounded-xl shadow-md transition text-base">
+        <button type="submit" id="btnSubmit" class="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white font-bold py-3.5 rounded-xl shadow-md transition text-base">
           Kirim Pesanan Sekarang
         </button>
       </form>
@@ -120,7 +122,7 @@
       <p class="text-gray-600 text-sm mb-6">
         Data pesanan Anda sudah tersimpan di sistem kami. Klik tombol di bawah untuk mengirim rincian ke WhatsApp Admin.
       </p>
-      <a id="waDirectLink" href="#" target="_blank" class="block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow mb-3 transition">
+      <a id="waDirectLink" href="#" target="_blank" rel="noopener" class="block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow mb-3 transition">
         💬 Lanjut Konfirmasi ke WhatsApp
       </a>
       <button type="button" onclick="closeModal()" class="text-sm text-gray-500 hover:text-gray-800 font-medium">
@@ -141,28 +143,37 @@
 
   <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyh-7oAUz82wSalbJKNsTQzFVJUqQMQ-mkXr6KtWeLAo6STEFewEqDX-XIRAICMavVLFQ/exec';
-    const NOMOR_WA_ADMIN = '6281234567890'; // Ganti nomor WA Admin Anda (awali 62)
+    const NOMOR_WA_ADMIN = '6281234567890'; // GANTI dengan nomor WA Admin Anda (awali 62, tanpa + atau spasi)
 
     let productList = [];
     let cart = [];
 
-    document.addEventListener('DOMContentLoaded', async function() {
-      try {
-        const res = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`);
-        const json = await res.json();
-        if (json.status === 'success') {
-          renderProducts(json.data);
-        } else {
-          throw new Error(json.message);
-        }
-      } catch (err) {
-        document.getElementById('status-box').innerHTML = 
-          '<p class="text-red-600 font-semibold">Gagal memuat produk: ' + err.message + '</p>';
-      }
-    });
+    // Mencegah nama/deskripsi produk merusak tampilan atau menyisipkan kode
+    function escapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
 
     function formatRupiah(angka) {
-      return 'Rp ' + Number(angka).toLocaleString('id-ID');
+      return 'Rp ' + (Number(angka) || 0).toLocaleString('id-ID');
+    }
+
+    document.addEventListener('DOMContentLoaded', loadProducts);
+
+    async function loadProducts() {
+      const statusBox = document.getElementById('status-box');
+      try {
+        const res = await fetch(SCRIPT_URL + '?t=' + Date.now());
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message);
+        renderProducts(json.data);
+      } catch (err) {
+        statusBox.style.display = '';
+        statusBox.innerHTML =
+          '<p class="text-red-600 font-semibold mb-3">Gagal memuat produk: ' + escapeHtml(err.message) + '</p>' +
+          '<button type="button" onclick="location.reload()" class="bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2 rounded-xl">Coba Lagi</button>';
+      }
     }
 
     function renderProducts(products) {
@@ -171,29 +182,28 @@
       const grid = document.getElementById('product-grid');
 
       if (productList.length === 0) {
-        statusBox.innerHTML = '<p class="text-gray-500">Belum ada produk tersedia. Silakan tambahkan melalui halaman Admin.</p>';
+        statusBox.innerHTML = '<p class="text-gray-500">Belum ada produk tersedia. Silakan cek kembali nanti.</p>';
         return;
       }
 
       statusBox.style.display = 'none';
       grid.innerHTML = '';
 
-      productList.forEach((p, index) => {
-        const imgUrl = p.gambar && p.gambar.startsWith('http') 
-          ? p.gambar 
-          : 'https://placehold.co/400x300/f59e0b/ffffff?text=' + encodeURIComponent(p.nama);
+      productList.forEach(function (p, index) {
+        const fallback = 'https://placehold.co/400x300/f59e0b/ffffff?text=Noura+Bites';
+        const imgUrl = p.gambar && p.gambar.startsWith('http') ? p.gambar : fallback;
 
         const card = document.createElement('div');
         card.className = 'bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition flex flex-col justify-between border border-amber-100';
         card.innerHTML = `
           <div>
             <div class="h-52 w-full bg-amber-100 overflow-hidden">
-              <img src="${imgUrl}" alt="${p.nama}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/400x300/f59e0b/ffffff?text=Noura+Bites'">
+              <img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(p.nama)}" loading="lazy" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${fallback}'">
             </div>
             <div class="p-5">
-              <h3 class="font-bold text-lg text-gray-900">${p.nama}</h3>
+              <h3 class="font-bold text-lg text-gray-900">${escapeHtml(p.nama)}</h3>
               <p class="text-amber-600 font-bold text-base mt-1">${formatRupiah(p.harga)}</p>
-              <p class="text-gray-600 text-sm mt-2 leading-relaxed">${p.deskripsi}</p>
+              <p class="text-gray-600 text-sm mt-2 leading-relaxed">${escapeHtml(p.deskripsi)}</p>
             </div>
           </div>
           <div class="p-5 pt-0">
@@ -208,43 +218,45 @@
 
     function addToCart(index, btnElement) {
       const product = productList[index];
-      const existing = cart.find(item => item.id === product.id);
+      if (!product) return;
+
+      const existing = cart.find(function (item) { return item.id === product.id; });
       if (existing) {
         existing.qty += 1;
       } else {
-        cart.push({ id: product.id, nama: product.nama, harga: product.harga, qty: 1 });
+        cart.push({ id: product.id, nama: product.nama, harga: Number(product.harga) || 0, qty: 1 });
       }
       renderCart();
 
-      if (btnElement) {
+      // Animasi tombol; dicegah menumpuk kalau tombol diklik cepat berkali-kali
+      if (btnElement && !btnElement.dataset.busy) {
+        btnElement.dataset.busy = '1';
         const originalText = btnElement.innerText;
         btnElement.innerText = '✓ Ditambahkan!';
         btnElement.classList.add('bg-green-600', 'text-white');
-        setTimeout(() => {
+        setTimeout(function () {
           btnElement.innerText = originalText;
           btnElement.classList.remove('bg-green-600', 'text-white');
+          delete btnElement.dataset.busy;
         }, 800);
       }
     }
 
-    function updateQty(id, delta) {
-      const item = cart.find(i => i.id === id);
+    function updateQty(cartIndex, delta) {
+      const item = cart[cartIndex];
       if (!item) return;
       item.qty += delta;
-      if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
+      if (item.qty <= 0) cart.splice(cartIndex, 1);
       renderCart();
     }
 
     function renderCart() {
       const container = document.getElementById('cart-items');
-      const badge = document.getElementById('cart-badge');
-      const totalDisplay = document.getElementById('cart-total-display');
+      const totalQty = cart.reduce(function (sum, item) { return sum + item.qty; }, 0);
+      const totalPrice = cart.reduce(function (sum, item) { return sum + item.harga * item.qty; }, 0);
 
-      const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
-      const totalPrice = cart.reduce((sum, item) => sum + (item.harga * item.qty), 0);
-
-      badge.innerText = totalQty;
-      totalDisplay.innerText = formatRupiah(totalPrice);
+      document.getElementById('cart-badge').innerText = totalQty;
+      document.getElementById('cart-total-display').innerText = formatRupiah(totalPrice);
 
       if (cart.length === 0) {
         container.innerHTML = '<p class="text-gray-400 italic text-center py-3">Keranjang masih kosong. Silakan pilih menu di atas.</p>';
@@ -252,18 +264,18 @@
       }
 
       container.innerHTML = '';
-      cart.forEach(item => {
+      cart.forEach(function (item, i) {
         const row = document.createElement('div');
-        row.className = 'flex justify-between items-center bg-amber-50 p-2.5 rounded-lg border border-amber-100';
+        row.className = 'flex justify-between items-center gap-3 bg-amber-50 p-2.5 rounded-lg border border-amber-100';
         row.innerHTML = `
           <div>
-            <p class="font-semibold text-gray-800">${item.nama}</p>
-            <p class="text-xs text-gray-500">${formatRupiah(item.harga)} x ${item.qty}</p>
+            <p class="font-semibold text-gray-800">${escapeHtml(item.nama)}</p>
+            <p class="text-xs text-gray-500">${formatRupiah(item.harga)} x ${item.qty} = ${formatRupiah(item.harga * item.qty)}</p>
           </div>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="updateQty('${item.id}', -1)" class="w-7 h-7 bg-white border border-gray-300 hover:bg-gray-100 rounded-md font-bold text-gray-700">-</button>
+          <div class="flex items-center gap-2 shrink-0">
+            <button type="button" onclick="updateQty(${i}, -1)" aria-label="Kurangi" class="w-7 h-7 bg-white border border-gray-300 hover:bg-gray-100 rounded-md font-bold text-gray-700">-</button>
             <span class="w-6 text-center font-semibold">${item.qty}</span>
-            <button type="button" onclick="updateQty('${item.id}', 1)" class="w-7 h-7 bg-amber-500 hover:bg-amber-600 text-white rounded-md font-bold">+</button>
+            <button type="button" onclick="updateQty(${i}, 1)" aria-label="Tambah" class="w-7 h-7 bg-amber-500 hover:bg-amber-600 text-white rounded-md font-bold">+</button>
           </div>
         `;
         container.appendChild(row);
@@ -274,7 +286,7 @@
       document.getElementById('successModal').classList.add('hidden');
     }
 
-    document.getElementById('orderForm').addEventListener('submit', async function(e) {
+    document.getElementById('orderForm').addEventListener('submit', async function (e) {
       e.preventDefault();
       if (cart.length === 0) {
         alert('Keranjang masih kosong! Silakan pilih minimal 1 snack terlebih dahulu.');
@@ -286,18 +298,16 @@
       btn.disabled = true;
       btn.innerText = 'Menyimpan Pesanan...';
 
-      const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
-      const totalPrice = cart.reduce((sum, item) => sum + (item.harga * item.qty), 0);
-      const ringkasanProduk = cart.map(item => `${item.nama} (${item.qty}x)`).join(', ');
-
       const orderData = {
-        nama: document.getElementById('nama').value,
-        whatsapp: document.getElementById('whatsapp').value,
-        produk: ringkasanProduk,
-        jumlah: totalQty,
-        total: totalPrice,
-        alamat: document.getElementById('alamat').value,
-        catatan: document.getElementById('catatan').value
+        nama: document.getElementById('nama').value.trim(),
+        whatsapp: document.getElementById('whatsapp').value.trim(),
+        alamat: document.getElementById('alamat').value.trim(),
+        catatan: document.getElementById('catatan').value.trim(),
+        // Daftar item dikirim agar total dihitung ulang di server sesuai harga di sheet
+        items: cart.map(function (item) { return { id: item.id, qty: item.qty }; }),
+        produk: cart.map(function (item) { return item.nama + ' (' + item.qty + 'x)'; }).join(', '),
+        jumlah: cart.reduce(function (sum, item) { return sum + item.qty; }, 0),
+        total: cart.reduce(function (sum, item) { return sum + item.harga * item.qty; }, 0)
       };
 
       try {
@@ -309,16 +319,19 @@
         const res = await response.json();
 
         if (res.status === 'success') {
-          const pesanWA = `Halo Admin Noura Bites Snack! Saya mau pesan:\n\n` +
-            `*Nama:* ${orderData.nama}\n` +
-            `*No. WA:* ${orderData.whatsapp}\n` +
-            `*Pesanan:* ${orderData.produk}\n` +
-            `*Total:* ${formatRupiah(orderData.total)}\n` +
-            `*Alamat:* ${orderData.alamat}\n` +
-            `*Catatan:* ${orderData.catatan || '-'}\n\n` +
-            `Mohon info ongkir & pembayarannya ya. Terima kasih!`;
+          // Pakai rincian & total hasil hitungan server bila tersedia
+          const final = res.data || orderData;
+          const pesanWA = 'Halo Admin Noura Bites Snack! Saya mau pesan:\n\n' +
+            '*Nama:* ' + orderData.nama + '\n' +
+            '*No. WA:* ' + orderData.whatsapp + '\n' +
+            '*Pesanan:* ' + final.produk + '\n' +
+            '*Total:* ' + formatRupiah(final.total) + '\n' +
+            '*Alamat:* ' + orderData.alamat + '\n' +
+            '*Catatan:* ' + (orderData.catatan || '-') + '\n\n' +
+            'Mohon info ongkir & pembayarannya ya. Terima kasih!';
 
-          document.getElementById('waDirectLink').href = `https://wa.me/${NOMOR_WA_ADMIN}?text=${encodeURIComponent(pesanWA)}`;
+          document.getElementById('waDirectLink').href =
+            'https://wa.me/' + NOMOR_WA_ADMIN + '?text=' + encodeURIComponent(pesanWA);
           document.getElementById('successModal').classList.remove('hidden');
 
           cart = [];
