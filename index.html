@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Noura Bites Snack</title>
+  <title>Noura Bites Snack - Camilan Renyah & Nagih</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -141,14 +141,13 @@
 
   <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyh-7oAUz82wSalbJKNsTQzFVJUqQMQ-mkXr6KtWeLAo6STEFewEqDX-XIRAICMavVLFQ/exec';
-    const NOMOR_WA_ADMIN = '6281234567890'; // Ganti nomor WA Admin (format 628...)
+    const NOMOR_WA_ADMIN = '6281234567890'; // Ganti nomor WA Admin Anda (awali 62)
 
     let productList = [];
     let cart = [];
 
     document.addEventListener('DOMContentLoaded', async function() {
       try {
-        // Tambahkan parameter anti-cache agar produk baru langsung muncul
         const res = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`);
         const json = await res.json();
         if (json.status === 'success') {
@@ -302,7 +301,6 @@
       };
 
       try {
-        // Menggunakan text/plain agar terhindar dari CORS preflight OPTIONS di Google Apps Script
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
