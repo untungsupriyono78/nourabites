@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
   <title>Admin Panel - Noura Bites</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -37,35 +38,35 @@
 
       <form id="productForm" class="space-y-4">
         <input type="hidden" id="editId" value="">
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-semibold mb-1">Password Admin *</label>
-            <input type="password" id="adminPass" required placeholder="Masukkan password admin" class="w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+            <label for="adminPass" class="block text-sm font-semibold mb-1">Password Admin *</label>
+            <input type="password" id="adminPass" required autocomplete="current-password" placeholder="Masukkan password admin" class="w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
           </div>
           <div>
-            <label class="block text-sm font-semibold mb-1">Nama Produk *</label>
-            <input type="text" id="namaProduk" required placeholder="Contoh: Basreng Daun Jeruk" class="w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+            <label for="namaProduk" class="block text-sm font-semibold mb-1">Nama Produk *</label>
+            <input type="text" id="namaProduk" required maxlength="100" placeholder="Contoh: Basreng Daun Jeruk" class="w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
           </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-semibold mb-1">Harga (Angka saja) *</label>
-            <input type="number" id="hargaProduk" required placeholder="Contoh: 15000" class="w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+            <label for="hargaProduk" class="block text-sm font-semibold mb-1">Harga (Angka saja) *</label>
+            <input type="number" id="hargaProduk" required min="1" step="1" placeholder="Contoh: 15000" class="w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
           </div>
           <div>
-            <label class="block text-sm font-semibold mb-1">Foto Produk <span id="fotoNote" class="text-red-500">*</span></label>
+            <label for="fotoProduk" class="block text-sm font-semibold mb-1">Foto Produk <span id="fotoNote" class="text-red-500">*</span></label>
             <input type="file" id="fotoProduk" accept="image/*" required class="w-full px-3 py-1.5 border rounded-xl bg-gray-50 text-sm">
           </div>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-1">Deskripsi Singkat *</label>
-          <textarea id="deskripsiProduk" rows="2" required placeholder="Jelaskan rasa, berat bersih, kemasan, dll..." class="w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
+          <label for="deskripsiProduk" class="block text-sm font-semibold mb-1">Deskripsi Singkat *</label>
+          <textarea id="deskripsiProduk" rows="2" required maxlength="500" placeholder="Jelaskan rasa, berat bersih, kemasan, dll..." class="w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
         </div>
 
-        <button type="submit" id="btnSave" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-6 py-2.5 rounded-xl shadow transition">
+        <button type="submit" id="btnSave" class="bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white font-bold px-6 py-2.5 rounded-xl shadow transition">
           Upload & Simpan Produk
         </button>
       </form>
@@ -86,61 +87,63 @@
 
     document.addEventListener('DOMContentLoaded', loadProducts);
 
+    function escapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
     function showAlert(msg, isError) {
       const box = document.getElementById('alertBox');
-      box.innerText = msg;
-      box.className = isError 
+      box.innerText = msg || (isError ? 'Terjadi kesalahan.' : 'Berhasil.');
+      box.className = isError
         ? 'mb-4 p-3.5 rounded-xl text-sm font-medium bg-red-100 text-red-700 border border-red-200'
         : 'mb-4 p-3.5 rounded-xl text-sm font-medium bg-green-100 text-green-700 border border-green-200';
-      box.classList.remove('hidden');
+      box.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     async function loadProducts() {
       try {
-        const res = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`);
+        const res = await fetch(SCRIPT_URL + '?t=' + Date.now());
         const json = await res.json();
-        if (json.status === 'success') {
-          renderAdminProducts(json.data);
-        } else {
-          throw new Error(json.message);
-        }
+        if (json.status !== 'success') throw new Error(json.message);
+        renderAdminProducts(json.data);
       } catch (err) {
-        document.getElementById('admin-product-list').innerHTML = 
-          '<p class="text-red-600 py-4 text-sm">Error: ' + err.message + '</p>';
+        document.getElementById('admin-product-list').innerHTML =
+          '<p class="text-red-600 py-4 text-sm">Error: ' + escapeHtml(err.message) + '</p>';
       }
     }
 
     function renderAdminProducts(products) {
       currentProducts = products || [];
       const container = document.getElementById('admin-product-list');
-      
+
       if (currentProducts.length === 0) {
         container.innerHTML = '<p class="text-gray-500 py-4 text-sm">Belum ada produk yang tersimpan.</p>';
         return;
       }
 
       container.innerHTML = '';
-      currentProducts.forEach((p, idx) => {
-        const imgUrl = p.gambar && p.gambar.startsWith('http') 
-          ? p.gambar 
-          : 'https://placehold.co/150x150/f59e0b/ffffff?text=Snack';
+      currentProducts.forEach(function (p, idx) {
+        const fallback = 'https://placehold.co/150x150/f59e0b/ffffff?text=Snack';
+        const imgUrl = p.gambar && p.gambar.startsWith('http') ? p.gambar : fallback;
 
         const item = document.createElement('div');
         item.className = 'py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4';
         item.innerHTML = `
           <div class="flex items-center gap-4">
-            <img src="${imgUrl}" class="w-16 h-16 object-cover rounded-xl border bg-gray-50">
+            <img src="${escapeHtml(imgUrl)}" alt="" class="w-16 h-16 object-cover rounded-xl border bg-gray-50 shrink-0" onerror="this.onerror=null;this.src='${fallback}'">
             <div>
-              <h3 class="font-bold text-gray-900">${p.nama}</h3>
-              <p class="text-sm text-amber-600 font-semibold">Rp ${Number(p.harga).toLocaleString('id-ID')}</p>
-              <p class="text-xs text-gray-500 mt-0.5">${p.deskripsi}</p>
+              <h3 class="font-bold text-gray-900">${escapeHtml(p.nama)}</h3>
+              <p class="text-sm text-amber-600 font-semibold">Rp ${(Number(p.harga) || 0).toLocaleString('id-ID')}</p>
+              <p class="text-xs text-gray-500 mt-0.5">${escapeHtml(p.deskripsi)}</p>
             </div>
           </div>
-          <div class="flex gap-2">
+          <div class="flex gap-2 shrink-0">
             <button type="button" onclick="editProduk(${idx})" class="bg-blue-100 hover:bg-blue-600 hover:text-white text-blue-700 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">
               Edit
             </button>
-            <button type="button" onclick="hapusProduk('${p.id}')" class="bg-red-100 hover:bg-red-600 hover:text-white text-red-700 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">
+            <button type="button" onclick="hapusProduk(${idx}, this)" class="bg-red-100 hover:bg-red-600 hover:text-white disabled:opacity-60 text-red-700 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">
               Hapus
             </button>
           </div>
@@ -151,64 +154,72 @@
 
     function editProduk(idx) {
       const p = currentProducts[idx];
+      if (!p) return;
+
       document.getElementById('editId').value = p.id;
       document.getElementById('namaProduk').value = p.nama;
       document.getElementById('hargaProduk').value = p.harga;
       document.getElementById('deskripsiProduk').value = p.deskripsi;
-      
+      document.getElementById('fotoProduk').value = '';
+
       document.getElementById('formTitle').innerText = 'Edit Produk: ' + p.nama;
       document.getElementById('btnSave').innerText = 'Simpan Perubahan';
       document.getElementById('btnCancelEdit').classList.remove('hidden');
-      
+
       document.getElementById('fotoProduk').required = false;
       document.getElementById('fotoNote').innerText = '(Kosongkan jika tidak ganti foto)';
       document.getElementById('fotoNote').className = 'text-gray-400 text-xs font-normal';
       document.getElementById('alertBox').classList.add('hidden');
-      
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function resetForm() {
+      // Password dipertahankan supaya tidak perlu diketik ulang setiap kali simpan
+      const savedPass = document.getElementById('adminPass').value;
       document.getElementById('productForm').reset();
+      document.getElementById('adminPass').value = savedPass;
+
       document.getElementById('editId').value = '';
       document.getElementById('formTitle').innerText = 'Tambah Produk Baru';
       document.getElementById('btnSave').innerText = 'Upload & Simpan Produk';
       document.getElementById('btnCancelEdit').classList.add('hidden');
-      
+
       document.getElementById('fotoProduk').required = true;
       document.getElementById('fotoNote').innerText = '*';
       document.getElementById('fotoNote').className = 'text-red-500';
     }
 
+    // Perkecil foto (maks. 800px) lalu ubah ke base64 JPEG
     function compressImageToBase64(file) {
-      return new Promise((resolve, reject) => {
+      return new Promise(function (resolve, reject) {
+        if (!file.type.startsWith('image/')) {
+          reject(new Error('File yang dipilih bukan gambar.'));
+          return;
+        }
         const reader = new FileReader();
-        reader.onload = function(event) {
+        reader.onload = function (event) {
           const img = new Image();
-          img.onload = function() {
-            const canvas = document.createElement('canvas');
+          img.onload = function () {
             const maxDim = 800;
-            let width = img.width;
-            let height = img.height;
+            const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+            const width = Math.round(img.width * scale);
+            const height = Math.round(img.height * scale);
 
-            if (width > height && width > maxDim) {
-              height *= maxDim / width;
-              width = maxDim;
-            } else if (height > maxDim) {
-              width *= maxDim / height;
-              height = maxDim;
-            }
-
+            const canvas = document.createElement('canvas');
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
+            // Latar putih agar PNG transparan tidak menjadi hitam saat dijadikan JPEG
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
             ctx.drawImage(img, 0, 0, width, height);
             resolve(canvas.toDataURL('image/jpeg', 0.8));
           };
-          img.onerror = () => reject(new Error('File gambar tidak valid'));
+          img.onerror = function () { reject(new Error('File gambar tidak valid atau formatnya tidak didukung browser.')); };
           img.src = event.target.result;
         };
-        reader.onerror = () => reject(new Error('Gagal membaca file gambar'));
+        reader.onerror = function () { reject(new Error('Gagal membaca file gambar.')); };
         reader.readAsDataURL(file);
       });
     }
@@ -222,7 +233,7 @@
       return await response.json();
     }
 
-    document.getElementById('productForm').addEventListener('submit', async function(e) {
+    document.getElementById('productForm').addEventListener('submit', async function (e) {
       e.preventDefault();
       const btn = document.getElementById('btnSave');
       const fileInput = document.getElementById('fotoProduk');
@@ -239,25 +250,22 @@
           base64Image = await compressImageToBase64(fileInput.files[0]);
         }
 
-        btn.innerText = 'Mengupload ke Cloudinary & menyimpan...';
-        const productData = {
-          id: editId,
-          nama: document.getElementById('namaProduk').value,
-          harga: document.getElementById('hargaProduk').value,
-          deskripsi: document.getElementById('deskripsiProduk').value
-        };
-
-        const actionName = editId ? 'editExistingProduct' : 'saveNewProduct';
+        btn.innerText = base64Image ? 'Mengupload ke Cloudinary & menyimpan...' : 'Menyimpan...';
         const res = await postToAppsScript({
-          action: actionName,
-          productData: productData,
+          action: editId ? 'editExistingProduct' : 'saveNewProduct',
+          productData: {
+            id: editId,
+            nama: document.getElementById('namaProduk').value.trim(),
+            harga: document.getElementById('hargaProduk').value,
+            deskripsi: document.getElementById('deskripsiProduk').value.trim()
+          },
           base64Image: base64Image,
           password: password
         });
 
         if (res.status === 'success') {
-          showAlert(res.message, false);
           resetForm();
+          showAlert(res.message, false);
           loadProducts();
         } else {
           showAlert(res.message, true);
@@ -266,25 +274,37 @@
         showAlert('Error: ' + err.message, true);
       } finally {
         btn.disabled = false;
-        btn.innerText = editId ? 'Simpan Perubahan' : 'Upload & Simpan Produk';
+        // Teks tombol mengikuti keadaan form SEKARANG (sudah di-reset atau masih mode edit)
+        btn.innerText = document.getElementById('editId').value ? 'Simpan Perubahan' : 'Upload & Simpan Produk';
       }
     });
 
-    async function hapusProduk(id) {
-      const pass = prompt('Masukkan Password Admin untuk menghapus produk:');
-      if (!pass) return;
+    async function hapusProduk(idx, btn) {
+      const p = currentProducts[idx];
+      if (!p) return;
 
+      // Pakai password di form bila sudah diisi; kalau belum, baru ditanyakan
+      let pass = document.getElementById('adminPass').value;
+      if (pass) {
+        if (!confirm('Hapus produk "' + p.nama + '"? Tindakan ini tidak bisa dibatalkan.')) return;
+      } else {
+        pass = prompt('Masukkan Password Admin untuk menghapus "' + p.nama + '":');
+        if (!pass) return;
+      }
+
+      if (btn) { btn.disabled = true; btn.innerText = 'Menghapus...'; }
       try {
-        const res = await postToAppsScript({
-          action: 'deleteProduct',
-          id: id,
-          password: pass
-        });
+        const res = await postToAppsScript({ action: 'deleteProduct', id: p.id, password: pass });
         showAlert(res.message, res.status !== 'success');
-        if (res.status === 'success') loadProducts();
+        if (res.status === 'success') {
+          if (document.getElementById('editId').value === p.id) resetForm();
+          await loadProducts();
+          return;
+        }
       } catch (err) {
         showAlert('Error: ' + err.message, true);
       }
+      if (btn) { btn.disabled = false; btn.innerText = 'Hapus'; }
     }
   </script>
 </body>
