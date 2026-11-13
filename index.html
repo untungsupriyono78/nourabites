@@ -54,13 +54,11 @@
       <p class="text-gray-600 text-sm md:text-base mt-2">Klik <b>"+ Tambah ke Keranjang"</b> pada snack yang ingin dipesan</p>
     </div>
 
-    <!-- Status Loading / Error -->
     <div id="status-box" class="text-center py-10">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-amber-600 border-t-transparent mb-2"></div>
-      <p id="status-text" class="text-amber-700 font-medium">Memuat daftar snack...</p>
+      <p class="text-amber-700 font-medium">Memuat daftar snack...</p>
     </div>
 
-    <!-- Grid Produk -->
     <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"></div>
   </section>
 
@@ -70,7 +68,6 @@
       <h2 class="text-2xl font-bold text-center text-gray-900 mb-1">Rincian & Form Pemesanan</h2>
       <p class="text-center text-gray-600 text-sm mb-6">Lengkapi data di bawah untuk memproses pesanan Anda</p>
 
-      <!-- Ringkasan Keranjang -->
       <div class="bg-white p-4 rounded-xl border border-amber-200 mb-6 shadow-sm">
         <h3 class="font-bold text-sm text-gray-700 mb-3 border-b pb-2 flex justify-between">
           <span>🛒 Daftar Snack Dipilih</span>
@@ -113,7 +110,7 @@
     </div>
   </section>
 
-  <!-- Modal Konfirmasi Sukses (Anti-Blokir Iframe) -->
+  <!-- Modal Konfirmasi Sukses -->
   <div id="successModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 text-center shadow-2xl">
       <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
@@ -123,7 +120,7 @@
       <p class="text-gray-600 text-sm mb-6">
         Data pesanan Anda sudah tersimpan di sistem kami. Klik tombol di bawah untuk mengirim rincian ke WhatsApp Admin.
       </p>
-      <a id="waDirectLink" href="#" target="_top" class="block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow mb-3 transition">
+      <a id="waDirectLink" href="#" target="_blank" class="block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow mb-3 transition">
         💬 Lanjut Konfirmasi ke WhatsApp
       </a>
       <button type="button" onclick="closeModal()" class="text-sm text-gray-500 hover:text-gray-800 font-medium">
@@ -136,27 +133,33 @@
   <footer class="bg-gray-900 text-gray-400 py-8 px-4 text-center text-sm">
     <p>© 2026 Noura Bites Snack. All rights reserved.</p>
     <p class="mt-2">
-      <a href="<?= webAppUrl ?>?page=admin" target="_top" class="text-xs text-gray-500 hover:text-amber-400 underline">
+      <a href="admin.html" class="text-xs text-gray-500 hover:text-amber-400 underline">
         Login Admin
       </a>
     </p>
   </footer>
 
   <script>
-    // GANTI DENGAN NOMOR WHATSAPP ADMIN (Awali dengan 62, tanpa tanda + atau 0)
-    const NOMOR_WA_ADMIN = '6281234567890'; 
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyh-7oAUz82wSalbJKNsTQzFVJUqQMQ-mkXr6KtWeLAo6STEFewEqDX-XIRAICMavVLFQ/exec';
+    const NOMOR_WA_ADMIN = '6281234567890'; // Ganti nomor WA Admin (format 628...)
 
     let productList = [];
     let cart = [];
 
-    document.addEventListener('DOMContentLoaded', function() {
-      google.script.run
-        .withSuccessHandler(renderProducts)
-        .withFailureHandler(function(err) {
-          document.getElementById('status-box').innerHTML = 
-            '<p class="text-red-600 font-semibold">Gagal memuat produk: ' + err.message + '</p>';
-        })
-        .getProducts();
+    document.addEventListener('DOMContentLoaded', async function() {
+      try {
+        // Tambahkan parameter anti-cache agar produk baru langsung muncul
+        const res = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`);
+        const json = await res.json();
+        if (json.status === 'success') {
+          renderProducts(json.data);
+        } else {
+          throw new Error(json.message);
+        }
+      } catch (err) {
+        document.getElementById('status-box').innerHTML = 
+          '<p class="text-red-600 font-semibold">Gagal memuat produk: ' + err.message + '</p>';
+      }
     });
 
     function formatRupiah(angka) {
@@ -207,20 +210,13 @@
     function addToCart(index, btnElement) {
       const product = productList[index];
       const existing = cart.find(item => item.id === product.id);
-      
       if (existing) {
         existing.qty += 1;
       } else {
-        cart.push({
-          id: product.id,
-          nama: product.nama,
-          harga: product.harga,
-          qty: 1
-        });
+        cart.push({ id: product.id, nama: product.nama, harga: product.harga, qty: 1 });
       }
       renderCart();
 
-      // Feedback visual pada tombol
       if (btnElement) {
         const originalText = btnElement.innerText;
         btnElement.innerText = '✓ Ditambahkan!';
@@ -236,9 +232,7 @@
       const item = cart.find(i => i.id === id);
       if (!item) return;
       item.qty += delta;
-      if (item.qty <= 0) {
-        cart = cart.filter(i => i.id !== id);
-      }
+      if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
       renderCart();
     }
 
@@ -281,7 +275,7 @@
       document.getElementById('successModal').classList.add('hidden');
     }
 
-    document.getElementById('orderForm').addEventListener('submit', function(e) {
+    document.getElementById('orderForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       if (cart.length === 0) {
         alert('Keranjang masih kosong! Silakan pilih minimal 1 snack terlebih dahulu.');
@@ -307,38 +301,40 @@
         catatan: document.getElementById('catatan').value
       };
 
-      google.script.run
-        .withSuccessHandler(function(res) {
-          btn.disabled = false;
-          btn.innerText = 'Kirim Pesanan Sekarang';
+      try {
+        // Menggunakan text/plain agar terhindar dari CORS preflight OPTIONS di Google Apps Script
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'submitOrder', orderData: orderData })
+        });
+        const res = await response.json();
 
-          if (res.status === 'success') {
-            const pesanWA = `Halo Admin Noura Bites Snack! Saya mau pesan:\n\n` +
-              `*Nama:* ${orderData.nama}\n` +
-              `*No. WA:* ${orderData.whatsapp}\n` +
-              `*Pesanan:* ${orderData.produk}\n` +
-              `*Total:* ${formatRupiah(orderData.total)}\n` +
-              `*Alamat:* ${orderData.alamat}\n` +
-              `*Catatan:* ${orderData.catatan || '-'}\n\n` +
-              `Mohon info ongkir & pembayarannya ya. Terima kasih!`;
+        if (res.status === 'success') {
+          const pesanWA = `Halo Admin Noura Bites Snack! Saya mau pesan:\n\n` +
+            `*Nama:* ${orderData.nama}\n` +
+            `*No. WA:* ${orderData.whatsapp}\n` +
+            `*Pesanan:* ${orderData.produk}\n` +
+            `*Total:* ${formatRupiah(orderData.total)}\n` +
+            `*Alamat:* ${orderData.alamat}\n` +
+            `*Catatan:* ${orderData.catatan || '-'}\n\n` +
+            `Mohon info ongkir & pembayarannya ya. Terima kasih!`;
 
-            const waUrl = `https://wa.me/${NOMOR_WA_ADMIN}?text=${encodeURIComponent(pesanWA)}`;
-            document.getElementById('waDirectLink').href = waUrl;
-            document.getElementById('successModal').classList.remove('hidden');
+          document.getElementById('waDirectLink').href = `https://wa.me/${NOMOR_WA_ADMIN}?text=${encodeURIComponent(pesanWA)}`;
+          document.getElementById('successModal').classList.remove('hidden');
 
-            cart = [];
-            renderCart();
-            document.getElementById('orderForm').reset();
-          } else {
-            alert('Gagal menyimpan: ' + res.message);
-          }
-        })
-        .withFailureHandler(function(err) {
-          btn.disabled = false;
-          btn.innerText = 'Kirim Pesanan Sekarang';
-          alert('Terjadi kesalahan sistem: ' + err.message);
-        })
-        .submitOrder(orderData);
+          cart = [];
+          renderCart();
+          document.getElementById('orderForm').reset();
+        } else {
+          alert('Gagal menyimpan: ' + res.message);
+        }
+      } catch (err) {
+        alert('Terjadi kesalahan koneksi: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Kirim Pesanan Sekarang';
+      }
     });
   </script>
 </body>
